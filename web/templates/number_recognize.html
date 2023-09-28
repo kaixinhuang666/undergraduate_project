@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        
+        
+        <title>手写数字识别</title>
+        <style rel=“stylesheet”>
+            
+            body{
+                background-color: antiquewhite;
+            }
+
+            .div_canvas{
+                padding-top: 30px;
+                
+            }
+            button{
+                background: #ea3f6a;
+                width: 230px;
+                height: 80px;
+                border: 0px;
+                color: white;
+                font-size: 30px;
+                cursor: pointer;
+            }
+            button:hover{
+                background:#e97b96 ;
+            }
+            .div_button{
+                padding-left: 20px;
+                padding-top: 20px;
+            }
+            
+            
+            #chart{
+				width: 600px;
+				height: 500px;
+				border: 1px solid skyblue;
+				background-color: slategray;
+				position: relative;
+			}
+            #chart ul li{
+				float: left;
+				position: absolute;
+				bottom: 0px;
+				background-color: salmon;
+				text-align: center;
+				font-weight: bold;
+				color: black;
+			    /* height: 400px; */
+				width:30px;
+				list-style: none;
+			}
+            .cc0{left: 50px;height:0px;background-color: darkcyan;}
+            /* #chart ul li #cc0{left: 50px; height:120px;background-color: darkcyan;} */
+			.cc1{left:100px;height:0px;}
+			.cc2{left: 150px; height:0px;}
+			.cc3{left:200px ;height:0px;}
+            .cc4{left:250px ;height:0px;}
+            .cc5{left:300px ;height:0px;}
+            .cc6{left:350px ;height:0px;}
+            .cc7{left:400px ;height:0px;}
+            .cc8{left:450px ;height:0px;}
+            .cc9{left:500px ;height:0px;}
+
+            .inline-div{display: inline-block;}
+
+            #chart{left: 100px;}
+
+            .div_result{
+                font-size:xx-large;
+            }
+
+
+            
+        </style>
+
+        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js">
+            
+        </script>
+        
+
+    </head>
+    <body>
+        <div class="div_title">
+            <h1  align="center">现在开始进行手写数字识别！</h1>
+            <hr>
+        </div>
+
+        
+        <div class="div_canvas inline-div">
+            <!-- 创建画布 -->
+            <canvas id="c1" width="500" height="500" style="border: 3px solid black"></canvas>
+            <!-- <canvas id="c2" width="700" height="500" style="border: 3px solid black"></canvas> -->
+        </div>
+
+        
+        <div id="chart" class="inline-div">
+            <ul id="up">
+                <li class="cc0" id="update">0</li>
+                <li class="cc1" id="update">1</li>
+                <li class="cc2" id="update">2</li>
+                <li class="cc3" id="update">3</li>
+                <li class="cc4" id="update">4</li>
+                <li class="cc5" id="update">5</li>
+                <li class="cc6" id="update">6</li>
+                <li class="cc7" id="update">7</li>
+                <li class="cc8" id="update">8</li>
+                <li class="cc9" id="update">9</li>
+            </ul>
+        </div>
+
+        
+
+        <div class="div_button">
+            <button id="button_clear">清除</button>
+            <!-- <button id="button_start">开始识别</button> -->
+            <button id="button_download">下载</button>
+        </div>
+
+        
+
+        <div class="div_result" id="result_div">
+            <!-- <p>结果</p> -->
+            
+             <p class="div_result" id="p1">预测结果：None</p>
+             <p class="div_result" id="p2">预测概率:[]</p>
+        </div>
+        
+        
+
+        <script src="https://cdn.jsdelivr.net/npm/onnxjs/dist/onnx.min.js">
+        </script>
+        
+        
+
+        <script type="text/javascript">
+            var  isMobile =  false;
+            if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                isMobile =  true ;
+            }
+            if (isMobile){
+                window.location.href = '/number_recognize_phone'
+            }
+
+            const sess = new onnx.InferenceSession();
+            const loadingModelPromise = sess.loadModel("onnx_model_softmax500_bi_maxpool.onnx");
+
+            var canvas=document.querySelector('#c1')
+            var ctx=canvas.getContext('2d')
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineJoin='round'
+            ctx.lineCap='round'
+            ctx.lineWidth=40;
+            //获取按钮
+            // var start_buttom = document.querySelector('#button_start')
+            var save_buttom = document.querySelector('#button_download')
+            var clear_buttom = document.querySelector('#button_clear')
+            var img_name=10;
+            var isdraw=false;
+            var mousepress=false
+            var last=null;
+
+
+            canvas.onmousedown = beginDraw;  
+            canvas.onmousemove = drawing;  
+            canvas.onmouseup = endDraw;  
+            canvas.onmouseleave=endDraw;
+            canvas.addEventListener('touchstart',beginDraw,false);  
+            canvas.addEventListener('touchmove',drawing,false);  
+            canvas.addEventListener('touchend',endDraw,false);  
+
+
+
+
+            var chart0=document.querySelector(".cc0");
+            var chart1=document.querySelector(".cc1");
+            var chart2=document.querySelector(".cc2");
+            var chart3=document.querySelector(".cc3");
+            var chart4=document.querySelector(".cc4");
+            var chart5=document.querySelector(".cc5");
+            var chart6=document.querySelector(".cc6");
+            var chart7=document.querySelector(".cc7");
+            var chart8=document.querySelector(".cc8");
+            var chart9=document.querySelector(".cc9");
+
+
+
+
+            async function updatePredictions(){
+                const imgData = ctx.getImageData(0, 0, 500, 500);
+                const data=imgData.data;
+                var index = 255/2;
+                for (var i=0;i<imgData.data.length;i+=4)
+                {
+                    imgData.data[i]=255-imgData.data[i];
+                    imgData.data[i+1]=255-imgData.data[i+1];
+                    imgData.data[i+2]=255-imgData.data[i+2];
+                    imgData.data[i+3]=255;
+                    // var R = imgData.data[i]; //R(0-255)
+                    // var G = imgData.data[i + 1]; //G(0-255)
+                    // var B = imgData.data[i + 2]; //B(0-255)
+                    // var Alpha = imgData.data[i + 3]; //Alpha(0-255)
+                    // var sum = (R + G + B) / 3;
+                    // if (sum > index) {
+                    //     imgData.data[i] = 255;
+                    //     imgData.data[i + 1] = 255;
+                    //     imgData.data[i + 2] = 255;
+                    //     imgData.data[i + 3] = Alpha;
+                    // } else {
+                    //     imgData.data[i] = 0;
+                    //     imgData.data[i + 1] = 0;
+                    //     imgData.data[i + 2] = 0;
+                    //     imgData.data[i + 3] = Alpha;
+                    // }
+                }
+                
+                // console.log(imgData.data)
+                // ctx.putImageData(imgData,140,140);
+                const input = new onnx.Tensor(new Float32Array(imgData.data), "float32");
+                
+                // console.log(input)
+                const outputMap = await sess.run([input]);
+                // // const outputMap = await sess.run([input]);
+                const outputTensor = outputMap.values().next().value;
+                const predictions = outputTensor.data;
+                const roundPredictions=new Array()
+                for(var i=0;i<10;i++){
+                    roundPredictions[i]=Number(predictions[i].toFixed(4))
+                    
+                }
+                // predictions[1]=Number(predictions[1].toFixed(4))
+                console.log(roundPredictions)
+                const maxPrediction = Math.max(...roundPredictions);
+                
+                // console.log(strPrediction)
+                const predResult=roundPredictions.indexOf(maxPrediction)
+                console.log(predResult);
+                document.getElementById("p1").innerHTML = "预测结果："+predResult.toString();
+                document.getElementById("p2").innerHTML = "预测概率: ["+roundPredictions.join(' , ')+']';
+                chart0.style.height=String(400*roundPredictions[0])+'px';
+                chart1.style.height=String(400*roundPredictions[1])+'px'; 
+                chart2.style.height=String(400*roundPredictions[2])+'px'; 
+                chart3.style.height=String(400*roundPredictions[3])+'px'; 
+                chart4.style.height=String(400*roundPredictions[4])+'px'; 
+                chart5.style.height=String(400*roundPredictions[5])+'px'; 
+                chart6.style.height=String(400*roundPredictions[6])+'px'; 
+                chart7.style.height=String(400*roundPredictions[7])+'px'; 
+                chart8.style.height=String(400*roundPredictions[8])+'px'; 
+                chart9.style.height=String(400*roundPredictions[9])+'px';
+            }
+
+
+            function beginDraw(){  
+                mousepress = true;  
+            } 
+
+            function drawing(event){
+                event.preventDefault();
+                if(!mousepress)return;
+                var xy = pos(event);
+                if(last!=null){  
+                    ctx.beginPath();  
+                    ctx.moveTo(last.x,last.y);  
+                    ctx.lineTo(xy.x,xy.y);  
+                    ctx.stroke();  
+                    updatePredictions()
+                }  
+                last = xy;  
+                // updatePredictions()
+
+            }
+
+            function endDraw(event){  
+                mousepress = false;  
+                event.preventDefault();  
+                last = null;  
+            }  
+
+            function pos(event){  
+                var x,y;  
+                if(isTouch(event)){  
+                    x = event.touches[0].pageX-event.target.offsetLeft;  
+                    y = event.touches[0].pageY-event.target.offsetTop;  
+                }else{  
+                    x = event.offsetX;  
+                    y = event.offsetY;  
+                }  
+                return {x:x,y:y};  
+            } 
+
+            function isTouch(event){  
+                var type = event.type;  
+                if(type.indexOf('touch')>=0){  
+                    return true;  
+                }else{  
+                    return false;  
+                }  
+            }
+            
+           
+
+            
+
+            clear_buttom.onclick=function(){
+                ctx.clearRect(0,0,500,500)
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                document.getElementById("p1").innerHTML = "预测结果：None";
+                document.getElementById("p2").innerHTML = "预测概率: []";
+                chart0.style.height='0px';
+                chart1.style.height='0px'; 
+                chart2.style.height='0px'; 
+                chart3.style.height='0px'; 
+                chart4.style.height='0px'; 
+                chart5.style.height='0px'; 
+                chart6.style.height='0px'; 
+                chart7.style.height='0px'; 
+                chart8.style.height='0px'; 
+                chart9.style.height='0px';
+
+            }
+
+            // start_buttom.onclick=function(){
+            //     function b64ToUint8Array(b64Image) {
+            //     var img = atob(b64Image.split(',')[1]);
+            //     var img_buffer = [];
+            //     var i = 0;
+            //     while (i < img.length) {
+            //         img_buffer.push(img.charCodeAt(i));
+            //         i++;
+            //     }
+            //     return new Uint8Array(img_buffer);
+            //     }
+            //     var b64Image = canvas.toDataURL('image/jpeg');
+            //     var u8Image  = b64ToUint8Array(b64Image);
+            //     var formData = new FormData();
+            //     formData.append("image", new Blob([ u8Image ], {type: "image/jpg"}));
+            //     var xhr = new XMLHttpRequest();
+            //     xhr.open("POST", "/number_recognize", true);
+            //     xhr.send(formData);
+
+                
+            // }
+
+            save_buttom.onclick=function(){
+                
+        
+                var urldata=canvas.toDataURL();
+                // var img= new Image();
+                // img.src=urldata
+                // document.body.appendChild(img)
+                var downloada = document.createElement('a');
+                downloada.setAttribute('download',img_name)
+                img_name++;
+                downloada.href=urldata;
+                downloada.click()
+
+
+                // let chart0 = document.querySelector(".cc0"); 
+                // chart0.setAttribute("height",'400px');
+
+                
+
+                
+
+
+
+            }
+
+            // var pred_number=document.getElementById('pred_div').getAttribute('d');
+            // var prob_list=document.getElementById('prob_div').getAttribute('d');
+            // prob_list=prob_list.substring(1,prob_list.length-1)
+            // var split_prob_list = prob_list.split(",");
+            // for(i=0;i<10;i++){
+            //     split_prob_list[i]=parseFloat(split_prob_list[i])
+            // }
+
+            // console.log(pred_number,(split_prob_list[0]))
+
+
+            // // let chart0 = document.querySelector(".cc0"); 
+            // // chart0.setAttribute("height",'400px');
+            // var chart0=document.querySelector(".cc0");
+            // var chart1=document.querySelector(".cc1");
+            // var chart2=document.querySelector(".cc2");
+            // var chart3=document.querySelector(".cc3");
+            // var chart4=document.querySelector(".cc4");
+            // var chart5=document.querySelector(".cc5");
+            // var chart6=document.querySelector(".cc6");
+            // var chart7=document.querySelector(".cc7");
+            // var chart8=document.querySelector(".cc8");
+            // var chart9=document.querySelector(".cc9");
+            
+            // chart0.style.height=String(400*split_prob_list[0])+'px';
+            // chart1.style.height=String(400*split_prob_list[1])+'px'; 
+            // chart2.style.height=String(400*split_prob_list[2])+'px'; 
+            // chart3.style.height=String(400*split_prob_list[3])+'px'; 
+            // chart4.style.height=String(400*split_prob_list[4])+'px'; 
+            // chart5.style.height=String(400*split_prob_list[5])+'px'; 
+            // chart6.style.height=String(400*split_prob_list[6])+'px'; 
+            // chart7.style.height=String(400*split_prob_list[7])+'px'; 
+            // chart8.style.height=String(400*split_prob_list[8])+'px'; 
+            // chart9.style.height=String(400*split_prob_list[9])+'px';       
+            // console.log(x)
+            // $("#chart").load(location.href+" #chart");
+
+
+
+        </script>
+        
+
+    </body>
+</html>

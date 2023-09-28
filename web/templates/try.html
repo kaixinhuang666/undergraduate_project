@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>手写数字识别</title>
+        <style>
+            body{
+                background-color: antiquewhite;
+            }
+
+            .div_canvas{
+                padding-top: 30px;
+                
+            }
+            button{
+                background: #ea3f6a;
+                width: 150px;
+                height: 40px;
+                border: 0px;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+            }
+            button:hover{
+                background:#e97b96 ;
+            }
+            .div_button{
+                padding-left: 20px;
+            }
+            
+            
+        </style>
+
+        <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.js"></script>
+    </head>
+    <body>
+        <div class="div_title">
+            <h1  align="center">现在开始进行手写数字识别！</h1>
+            <hr>
+        </div>
+
+        <div class="div_canvas">
+            <!-- 创建画布 -->
+            <canvas id="c1" width="500" height="500" style="border: 3px solid black"></canvas>
+            
+            <!-- <canvas id="c2" width="700" height="500" style="border: 3px solid black"></canvas> -->
+        </div>
+
+        <div class="div_result" id="result_div">
+            <!-- <canvas id="c2" width="500" height="500" style="border: 3px solid black"></canvas>
+             -->
+             <p>预测结果：{{pred}}</p>
+             <p>预测概率{{prob}}</p>
+        </div>
+        
+        <div class="div_button">
+            <button id="button_clear">清除</button>
+            <button id="button_start">开始识别</button>
+            <button id="button_download">下载</button>
+        </div>
+        
+        <script>
+            $(function () {
+                    setInterval(function () {
+                        $("#result_div").load(location.href + " #result_div");//注意后面Div的id前面的空格，很重要！（也可以使用类名，或者某一种类名的.id名）
+                    }, 500);//设置自动刷新时间：3秒
+                })//自动刷新结果：
+            // setInterval(function() { 
+            //     $("#result_div").load(location.href+" #result_div>*",""); 
+            // }, 1000);
+
+            
+            // window.location.reload("#result_div");
+
+            //画笔获取
+            var pred='None'
+            var prob=[]
+            var canvas=document.querySelector('#c1')
+            var ctx=canvas.getContext('2d')
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.lineJoin='round'
+            ctx.lineCap='round'
+            ctx.lineWidth=25;
+            //获取按钮
+            var start_buttom = document.querySelector('#button_start')
+            var save_buttom = document.querySelector('#button_download')
+            var clear_buttom = document.querySelector('#button_clear')
+            var img_name=10;
+            var isdraw=false;
+
+            
+            
+            canvas.onmousedown=function(){
+                isdraw=true;
+                ctx.beginPath()
+                var x=event.pageX - canvas.offsetLeft;
+                var y=event.pageY - canvas.offsetTop;
+                ctx.moveTo(x,y)
+            }
+            
+            canvas.onmouseleave=function(){
+                isdraw=false;
+                ctx.closePath()
+            }
+            
+            canvas.onmouseup = function(){
+                isdraw=false;
+                ctx.closePath()
+            }
+            
+            canvas.onmousemove=function(){
+                if(isdraw){
+                    var x=event.pageX - canvas.offsetLeft;
+                    var y=event.pageY - canvas.offsetTop;
+                    ctx.lineTo(x,y)
+                    ctx.stroke()
+                }
+            }
+
+            clear_buttom.onclick=function(){
+                ctx.clearRect(0,0,500,500)
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // start_buttom.onclick=function(){
+            //     // window.location.reload("#result_div")
+            //     $("#result_div").load(location.href + " #result_div > *");
+            //     // $(function () {
+            //     //         setInterval(function () {
+            //     //             $("#result_div").load(location.href + " #result_div");//注意后面Div的id前面的空格，很重要！（也可以使用类名，或者某一种类名的.id名）
+            //     //         }, 1000);//设置自动刷新时间：3秒
+            //     //     })//自动刷新结果：
+            // }
+
+            save_buttom.onclick=function(){
+                
+        
+                // var urldata=canvas.toDataURL();
+                // // var img= new Image();
+                // // img.src=urldata
+                // // document.body.appendChild(img)
+                // var downloada = document.createElement('a');
+                // downloada.setAttribute('download',img_name)
+                // img_name++;
+                // downloada.href=urldata;
+                // downloada.click()
+                function b64ToUint8Array(b64Image) {
+                var img = atob(b64Image.split(',')[1]);
+                var img_buffer = [];
+                var i = 0;
+                while (i < img.length) {
+                    img_buffer.push(img.charCodeAt(i));
+                    i++;
+                }
+                return new Uint8Array(img_buffer);
+                }
+                var b64Image = canvas.toDataURL('image/jpeg');
+                var u8Image  = b64ToUint8Array(b64Image);
+                var formData = new FormData();
+                formData.append("image", new Blob([ u8Image ], {type: "image/jpg"}));
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "/try", true);
+                xhr.send(formData);
+                
+
+                // let xhr2 = new XMLHttpRequest()
+                // xhr2.open("GET","/try",true)
+                // xhr2.send()
+                // xhr2.onreadystatechange = function(){
+                //     console.log("111")
+                //     console.log(xhr.readyState)
+                // }
+
+
+
+            }
+            
+            
+
+
+
+
+
+        </script>
+        
+
+    </body>
+</html>

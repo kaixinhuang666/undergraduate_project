@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>welcome</title>
+        <style>
+            h1 {
+                color:rgb(225, 105, 145);
+                font-family:"STFangsong";
+                font-size: 60px;
+                
+            }
+            .animation {
+                background-color: white;
+                animation: anima 5s linear 0s infinite;
+            }
+            @keyframes anima{
+                0%{
+                    background-color: white;
+                }
+                50%{
+                    background-color:bisque;
+                }
+                100%{
+                    background-color: white;
+                }
+            }
+            .turnto {
+                
+                background: #1E90FF;
+                width: 300px;
+                height: 80px;
+                border-width: 0px;
+                border-radius: 3px;
+                font-family: Microsoft YaHei;
+                font-size: 20px;
+                color: white;
+                outline: none;
+                cursor: pointer;
+                
+            }
+            .turnto:hover{
+                background: #5599FF;
+            }
+            .div_button{
+                padding-top: 100px;
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body class="animation">
+        <div class="title_line">
+            <h1  align="center">欢迎进行手写数字识别！</h1>
+            <hr>
+        </div>
+        
+        <div class="div_button">
+            <a href="/number_recognize" align="center" target="_blank" >
+                <button class="turnto">点此进入识别</button>
+            </a>
+        </div>
+        
+
+    </body>
+</html>
